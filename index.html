@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elysium Archive | General Task</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --elysia-pink: #ffb7c5;
+            --elysia-purple: #cba6f7;
+            --bg-dark: #11111b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #cdd6f4;
+        }
+
+        /* Character Themes */
+        .theme-kevin { --accent: #89b4fa; --char: "KEVIN"; } /* PPKN */
+        .theme-aponia { --accent: #b4befe; --char: "APONIA"; } /* Agama */
+        .theme-kalpas { --accent: #f38ba8; --char: "KALPAS"; } /* Penjas */
+        .theme-villv { --accent: #fab387; --char: "VILL-V"; } /* Informatika */
+        .theme-eden { --accent: #f9e2af; --char: "EDEN"; } /* BK */
+        .theme-mobius { --accent: #a6e3a1; --char: "MOBIUS"; } /* Matematika */
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(255, 183, 197, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(203, 166, 247, 0.1) 0px, transparent 50%);
+            color: var(--text-main); min-height: 100vh; overflow-x: hidden; transition: 0.5s;
+        }
+
+        /* Sliding Text */
+        .marquee-box {
+            background: rgba(0, 0, 0, 0.4); border-bottom: 1px solid var(--elysia-pink); 
+            padding: 12px 0; overflow: hidden; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+        }
+        .marquee-inner {
+            display: inline-block; white-space: nowrap; animation: scroll 20s linear infinite;
+            font-weight: 800; color: var(--elysia-pink); font-size: 0.75rem; letter-spacing: 2px;
+        }
+        @keyframes scroll { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+        .container { max-width: 1000px; margin: auto; padding: 20px; text-align: center; }
+        header h1 { font-size: 2.5rem; font-weight: 800; margin-top: 30px; color: #fff; }
+        header span { color: var(--elysia-pink); text-shadow: 0 0 15px rgba(255, 183, 197, 0.5); }
+
+        /* Sections */
+        .section { display: none; flex-direction: column; align-items: center; min-height: 60vh; justify-content: center; animation: fadeIn 0.4s ease; }
+        .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%; margin-top: 30px; }
+        
+        /* Mapel Buttons */
+        .card-btn {
+            background: var(--glass); border: 1px solid var(--glass-border); padding: 40px 20px;
+            border-radius: 20px; cursor: pointer; transition: 0.3s; font-weight: 800; position: relative; overflow: hidden;
+        }
+        .card-btn::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--elysia-pink);
+        }
+        .card-btn:hover { border-color: var(--elysia-pink); background: rgba(255, 183, 197, 0.05); transform: translateY(-5px); }
+
+        /* Task Cards */
+        .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; text-align: left; }
+        .item { background: var(--glass); border-radius: 25px; border: 1px solid var(--glass-border); overflow: hidden; }
+        .media-box { position: relative; height: 200px; background: #000; }
+        .media-item { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .media-item.active { display: block; }
+        
+        .info { padding: 20px; }
+        .btn-link { 
+            display: block; width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px;
+            text-align: center; font-weight: 800; text-decoration: none; font-size: 0.8rem;
+            background: var(--elysia-pink); color: var(--bg-dark);
+        }
+
+        /* UI Elements */
+        .f-box { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .circle { width: 55px; height: 55px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .m-btn { background: var(--elysia-purple); }
+        .c-btn { background: var(--elysia-pink); }
+        .back-btn { margin-top: 25px; color: var(--elysia-pink); cursor: pointer; font-weight: 700; text-decoration: underline; }
+
+        /* Modal */
+        #comment-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: #1e1e2e; width: 90%; max-width: 400px; padding: 30px; border-radius: 24px; border: 1px solid var(--elysia-pink); text-align: center; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; border-radius: 10px; }
+    </style>
+</head>
+<body onclick="playMusic()">
+
+<div class="marquee-box">
+    <div class="marquee-inner">ELYSIUM ARCHIVE • "HI~♪" • MISS PINK ELF DATA CENTER • FLAME-CHASERS RESEARCH LOG • ACCESSING REALM OF MEMORY...</div>
+</div>
+
+<div class="container">
+    <header><h1>ELYSIUM<span>ARCHIVE</span></h1></header>
+    <p style="color: #a6adc8; font-style: italic; margin-top: 5px;">"Everything you want is here, and everything you don't want is also here."</p>
+
+    <div id="step-1" class="section active">
+        <h3 style="margin-top:30px; color: var(--elysia-pink)">Select Subject Area</h3>
+        <div class="grid">
+            <div class="card-btn" onclick="goStep(2, 'PPKN', 'theme-kevin')">⚖️ PPKN</div>
+            <div class="card-btn" onclick="goStep(2, 'Pendidikan Agama Kristen', 'theme-aponia')">🙏 Agama Kristen</div>
+            <div class="card-btn" onclick="goStep(2, 'Penjas', 'theme-kalpas')">🔥 Penjas</div>
+            <div class="card-btn" onclick="goStep(2, 'Informatika', 'theme-villv')">⚙️ Informatika</div>
+            <div class="card-btn" onclick="goStep(2, 'Bimbingan Konseling', 'theme-eden')">🎵 Bimbingan Konseling</div>
+            <div class="card-btn" onclick="goStep(2, 'Matematika', 'theme-mobius')">🧪 Matematika</div>
+        </div>
+    </div>
+
+    <div id="step-2" class="section">
+        <h3 id="subject-label" style="color: #fff">Subject</h3>
+        <div class="grid">
+            <div class="card-btn" onclick="render('1')">SEMESTER 1</div>
+            <div class="card-btn" onclick="render('2')">SEMESTER 2</div>
+        </div>
+        <div class="back-btn" onclick="backTo(1)">← BACK TO REALM</div>
+    </div>
+
+    <div id="step-3" class="section">
+        <h3 id="result-label" style="color: #fff">Archive Found</h3>
+        <div class="task-grid" id="mainGrid"></div>
+        <div class="back-btn" onclick="backTo(2)">← CHANGE SEMESTER</div>
+    </div>
+</div>
+
+<div id="comment-overlay">
+    <div class="modal-box">
+        <h3 style="color: var(--elysia-pink)">Send Feedback</h3>
+        <p id="ctx-info" style="font-size: 0.7rem; color: #888; margin-bottom: 15px;"></p>
+        <input type="text" id="i-nama" placeholder="Your Name">
+        <textarea id="i-pesan" rows="4" placeholder="Message..."></textarea>
+        <button onclick="sendGform()" style="width:100%; padding:12px; background:var(--elysia-pink); border:none; border-radius:10px; font-weight:800; cursor:pointer;">SUBMIT</button>
+        <p onclick="toggleC(false)" style="margin-top:10px; cursor:pointer; font-size:0.8rem;">CANCEL</p>
+    </div>
+</div>
+
+<div class="f-box">
+    <button class="circle m-btn" onclick="toggleMute()" id="m-icon">🔊</button>
+    <button class="circle c-btn" onclick="toggleC(true)">💬</button>
+</div>
+
+<audio id="bgm" loop src="UMUM.mp3"></audio>
+
+<script>
+    let state = { m: '', s: '', theme: '' };
+    let musicStarted = false;
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS7DxuxYJLZn2cYV290RNxneB7PcFLo_ECojemQonlBqjHSXl2HAWc4PEEh_c6mhvTbCNn4p2cUX-nD/pub?output=csv';
+
+    function playMusic() {
+        if(!musicStarted) {
+            const a = document.getElementById('bgm');
+            a.volume = 0.05; a.play(); musicStarted = true;
+        }
+    }
+
+    function toggleMute() {
+        const a = document.getElementById('bgm');
+        a.muted = !a.muted;
+        document.getElementById('m-icon').innerText = a.muted ? "🔇" : "🔊";
+    }
+
+    function goStep(n, val, theme) {
+        if(val) {
+            state.m = val;
+            state.theme = theme;
+            document.body.className = theme;
+            document.getElementById('subject-label').innerText = val;
+        }
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-'+n).classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    function backTo(n) {
+        if(n === 1) document.body.className = '';
+        goStep(n);
+    }
+
+    function render(sem) {
+        state.s = sem;
+        goStep(3);
+        const g = document.getElementById('mainGrid');
+        g.innerHTML = '<p>Accessing Archive...</p>';
+
+        Papa.parse(csvUrl, {
+            download: true, header: true,
+            complete: (res) => {
+                const data = res.data.filter(r => r.Mapel == state.m && r.Semester == sem);
+                g.innerHTML = data.length ? '' : '<p>No data found in this memory.</p>';
+
+                data.forEach((row, i) => {
+                    const photos = row['URL Foto'].split(',').map(u => u.trim());
+                    let mediaHTML = '';
+                    photos.forEach((url, idx) => {
+                        mediaHTML += `<img class="media-item ${idx===0?'active':''}" src="${url}" id="img-${i}-${idx}">`;
+                    });
+
+                    let desc = row.Deskripsi || '';
+                    let pdfBtn = '';
+                    const linkMatch = desc.match(/https?:\/\/[^\s]+/);
+                    if(linkMatch) {
+                        pdfBtn = `<a href="${linkMatch[0]}" target="_blank" class="btn-link">VIEW DOCUMENT</a>`;
+                        desc = desc.replace(linkMatch[0], '');
+                    }
+
+                    g.innerHTML += `
+                        <div class="item">
+                            <div class="media-box" onclick="nextImg(${i}, ${photos.length})">
+                                ${mediaHTML}
+                                ${photos.length > 1 ? '<div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:10px; font-size:0.6rem;">Tap to see more</div>' : ''}
+                            </div>
+                            <div class="info">
+                                <span style="font-size:0.7rem; color:var(--elysia-pink)">${row.Tanggal || 'Data Log'}</span>
+                                <h4 style="margin:5px 0; color:#fff">${row['Nama Tugas']}</h4>
+                                <p style="font-size:0.75rem; color:#a6adc8; line-height:1.4">${desc}</p>
+                                ${pdfBtn}
+                            </div>
+                        </div>`;
+                });
+            }
+        });
+    }
+
+    function nextImg(cardId, total) {
+        const items = document.querySelectorAll(`[id^="img-${cardId}-"]`);
+        let cur = Array.from(items).findIndex(img => img.classList.contains('active'));
+        items[cur].classList.remove('active');
+        items[(cur + 1) % total].classList.add('active');
+    }
+
+    function toggleC(s) {
+        document.getElementById('ctx-info').innerText = `Context: ${state.m} - Sem ${state.s}`;
+        document.getElementById('comment-overlay').style.display = s ? 'flex' : 'none';
+    }
+
+    function sendGform() {
+        const n = document.getElementById('i-nama').value;
+        const p = document.getElementById('i-pesan').value;
+        if(!n || !p) return alert("Fill all fields!");
+
+        const formID = "1FAIpQLSfHbFjwiC78v7f7jUgGpyBY8guaj9uxFE6CUepbSqnatQz8GA";
+        const fd = new FormData();
+        fd.append('entry.463699724', n);
+        fd.append('entry.1673012770', p);
+        fd.append('entry.684382473', state.m);
+        fd.append('entry.2079347732', 'N/A'); // Kamu tidak minta input kelas, jadi isi default
+        fd.append('entry.1259995628', state.s);
+
+        fetch(`https://docs.google.com/forms/d/e/${formID}/formResponse`, { method: 'POST', mode: 'no-cors', body: fd })
+        .then(() => {
+            alert("Archive Sent! HI~♪");
+            toggleC(false);
+            document.getElementById('i-pesan').value = '';
+        });
+    }
+</script>
+</body>
+</html>
